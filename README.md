@@ -13,3 +13,5 @@ Simple FIFO : https://www.edaplayground.com/x/HcWF
 CRC gen/check Serial : https://www.edaplayground.com/x/Rxxq
 
 CRC gen/check parallel bus : https://www.edaplayground.com/x/eSKC
+
+Generic Priority Encoder: https://www.edaplayground.com/x/XMjg
