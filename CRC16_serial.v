@@ -1,4 +1,4 @@
-//serial CRC 16 
+//serial CRC 16 gen module
 // polynomial : x^16 + x^12 + x^5 +1
 //initial seed is FFFF
 module crc16_serial (in,clk,rst,crc);
