@@ -3,7 +3,7 @@
 
 
 /*
- * AXI4 RAM Slave Interface 
+ * AXI4 RAM Slave Interface supports most of the AXI4 features except all the error generation
  */
 module axi_ram (clk,rst,s_axi_awid,s_axi_awaddr,s_axi_awlen,
                 s_axi_awsize, s_axi_awburst,s_axi_awlock,
