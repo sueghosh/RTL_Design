@@ -37,7 +37,7 @@ module cache_wrap (clk,rst,cpu_req_wen,cpu_req_vld,cpu_addr,cpu_wr_data,cpu_rd_d
   integer i;
   parameter IDLE =2'b00, CMP_TAG = 2'b01, ALLOC = 2'b10, WB = 2'b11;
   
-  assign index = cpu_addr[13:4];
+  assign index = cpu_addr[TAGLSB-1:WORDMSB+1];
   assign cpu_tag = cpu_addr[TAGMSB:TAGLSB];
   assign mem_addr = cpu_addr;
   assign tag_match = (cpu_tag == cache_tag_cur[TAGSIZE-1:0])? 1:0;
