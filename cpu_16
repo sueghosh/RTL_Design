@@ -1,0 +1,290 @@
+//////////////////////////////////////////////////////////////////////////////////
+
+// Create Date: 03/06/2023 06:37:12 PM
+// Design Name: top.v
+// Module Name: cpu
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 16 bit RISC CPU soft core
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
+
+
+`timescale 1ns / 1ps
+// fields for Instruction Reg
+`define opcode IR[31:27]
+`define rdst   IR[26:22]
+`define rsrc1  IR[21:17]
+`define mode   IR[16]
+`define rsrc2  IR[15:11]
+`define isrc   IR[15:0]
+
+//ALU op codes
+// Arithmetic
+`define movsgpr    5'b00000
+`define mov        5'b00001
+`define add        5'b00010
+`define sub        5'b00011
+`define mul        5'b00100
+//Logical
+`define ror        5'b00101
+`define rand       5'b00110
+`define rxor       5'b00111
+`define rxnor      5'b01000
+`define rnand      5'b01001
+`define rnor       5'b01010
+`define rnot       5'b01011
+//Load store operation
+`define storereg   5'b01101  // store content of reg to datamem
+`define storedin   5'b01110  // store content din bus to data mem
+`define loadreg    5'b01111
+`define loaddout   5'b10001
+//Jump and Branch operations
+`define jmp        5'b10010
+`define jcarry     5'b10011
+`define jncarry    5'b10100
+`define jsign      5'b10101
+`define jnsign     5'b10110
+`define jzero      5'b10111
+`define jnzero     5'b11000
+`define joverflow  5'b11001
+`define jnoverflow 5'b11010
+// Halt instruction
+`define halt       5'b11011
+
+
+module cpu(
+input clk,
+input reset,
+input [15:0] din,
+output reg [15:0] dout
+
+    );
+    
+ reg[31:0] IR;   
+ reg [15:0]GPR[31:0];  
+ reg [15:0] SGPR;
+ reg [16:0] temp_add;
+ reg carry,zero,sign,overflow;
+ wire[4:0] opcode = `opcode;
+ //reg [2:0] count;
+ reg jump_flag,stop_flag;
+ reg decode_x;
+ //------------------------------------------------------------------------------------------
+ //Instruction Memory
+ reg [31:0] instr_mem[15:0];
+
+ //-------------------------------------------------------------------------------------------------
+ //Data memory
+ reg [15:0] data_mem[15:0];
+ integer  j;
+ //----------------------------------------------------------------------------------------------------
+ 
+ //---------------------------Instruction decode and  ALU ---------------------------------------------
+ // always @(*)
+  //task decode_instr();
+  always @(posedge clk)
+  begin
+  if(reset) begin
+    SGPR<=16'd0;
+    for(j=0;j<32;j=j+1)
+      GPR[j]<=16'd0;
+    temp_add<=16'd0;  
+  end
+  else if (decode_x)
+  begin
+    jump_flag <= 0;
+    stop_flag <=0;
+    case(opcode)
+    // Arithmetic Operation
+    //Move Special
+   `movsgpr:GPR[`rdst] <= SGPR;
+   // Move
+   `mov: if(`mode ==1) GPR[`rdst] <= `isrc;
+         else GPR[`rdst] <= GPR[`rsrc1]; 
+    // Addition      
+   `add:begin
+    if(`mode ==1) begin 
+         temp_add <= GPR[`rsrc1]+`isrc;
+         GPR[`rdst] <= GPR[`rsrc1]+`isrc;
+         end
+         else begin 
+         temp_add <= GPR[`rsrc1] + GPR[`rsrc2];
+         GPR[`rdst] <= GPR[`rsrc1] + GPR[`rsrc2];
+         end
+    // Subtraction    
+    end 
+   `sub:if(`mode ==1) GPR[`rdst] <= GPR[`rsrc1]-`isrc;
+         else GPR[`rdst] <= GPR[`rsrc1] - GPR[`rsrc2];
+    // Multiplication     
+   `mul:if(`mode ==1) {SGPR,GPR[`rdst]} <= GPR[`rsrc1]*`isrc;
+         else {SGPR,GPR[`rdst]} <= GPR[`rsrc1] * GPR[`rsrc2];
+    // -------------------Logical operation ----------------------------------  
+    `ror:if(`mode ==1) GPR[`rdst] <= GPR[`rsrc1]|`isrc;
+         else GPR[`rdst] <= GPR[`rsrc1] | GPR[`rsrc2];
+    `rand:if(`mode ==1) GPR[`rdst] <= GPR[`rsrc1]&`isrc;
+         else GPR[`rdst] <= GPR[`rsrc1] & GPR[`rsrc2];   
+    `rxor:if(`mode ==1) GPR[`rdst] <= GPR[`rsrc1]^`isrc;
+         else GPR[`rdst] <= GPR[`rsrc1] ^ GPR[`rsrc2];
+    `rxnor:if(`mode ==1) GPR[`rdst] <= GPR[`rsrc1]~^`isrc;
+         else GPR[`rdst] <= GPR[`rsrc1] ~^ GPR[`rsrc2];  
+    `rnand:if(`mode ==1) GPR[`rdst] <= ~(GPR[`rsrc1]&`isrc);
+         else GPR[`rdst] <= ~(GPR[`rsrc1] & GPR[`rsrc2]);
+    `rnor:if(`mode ==1) GPR[`rdst] <= ~(GPR[`rsrc1]|`isrc);
+         else GPR[`rdst] <= ~(GPR[`rsrc1] | GPR[`rsrc2]);   
+    `rnot: if(`mode ==1) GPR[`rdst] <= ~(`isrc);
+         else GPR[`rdst] <= ~(GPR[`rsrc1]); 
+  //---------------------------Load Store Operation to and from data memory--------------------------       
+  // Store data from GPR to datamem       
+    `storereg: data_mem[`isrc] <= GPR[`rsrc1];   
+  // Store din to data_mem
+    `storedin: data_mem[`isrc] <= din;
+  //  Load data from datamem to GPR
+    `loadreg: GPR[`rdst] <= data_mem[`isrc];
+  // Send data from datamem to dout
+    `loaddout: dout <= data_mem[`isrc];  
+ //-----------------------------------Jump and Branch instr------------------------------------     
+    `jmp: jump_flag <= 1;
+    
+    `jcarry: if(carry==1'b1) 
+                jump_flag<=1 ;
+             else 
+                jump_flag<=0;
+    `jncarry:if(carry==1'b1) 
+                jump_flag<=0 ;
+             else 
+                jump_flag<=1;
+    `jsign:if(sign==1'b1) 
+                jump_flag<=1 ;
+           else 
+                jump_flag<=0;
+    `jnsign:if(sign==1'b1) 
+                jump_flag<=0 ;
+           else 
+                jump_flag<=1;
+    `jzero:if(zero==1'b1) 
+                jump_flag<=1 ;
+           else 
+                jump_flag<=0;
+    `jnzero:if(zero==1'b1) 
+                jump_flag<=0 ;
+           else 
+                jump_flag<=1;
+    `joverflow:if(overflow==1'b1) 
+                jump_flag<=1 ;
+           else 
+                jump_flag<=0;
+    `jnoverflow:if(overflow==1'b1) 
+                jump_flag<=0 ;
+           else 
+                jump_flag<=1;  
+                
+ //---------------------------Halt -------------------------------------
+    `halt: stop_flag<=1;                      
+    default: begin 
+        jump_flag <= 0;
+        stop_flag <=0;
+    end    
+    endcase
+    end
+    
+    end
+  
+  //endtask
+ //----------------------------- Generate flags ------------------------------------------   
+ always@(*)
+ //task decode_flags();
+ begin
+ // sign bit
+    if(opcode == `mul)
+        sign = SGPR[15];
+    else if(opcode <=5'b01011) //for ALU only operation update sign flag
+        sign = GPR[`rdst][15];
+ //carry bit
+     if(opcode == `add)   
+       carry=temp_add[16];
+     else
+        carry=1'b0;    
+ //zero bit --> is set when result of any operation is all zero
+     
+      if( opcode <=5'b01011) begin  //for ALU only operation update zero flag
+        if (opcode == `mul)
+            zero = ~ (|({SGPR,GPR[`rdst]})); //for multiplication SGPR needs to be checked
+        else
+            zero = ~(|GPR[`rdst]) ; 
+      end      
+      
+ //overflow bit      
+    if(opcode == `add)
+        overflow = (~GPR[`rsrc1][15] & ~(IR[15] | GPR[`rsrc2][15]) & GPR[`rdst][15] ) | (GPR[`rsrc1][15] & (IR[15] | GPR[`rsrc2][15]) & ~GPR[`rdst][15] );
+    else if (opcode == `sub)
+        overflow = (~GPR[`rsrc1][15] & (IR[15] | GPR[`rsrc2][15]) & GPR[`rdst][15] ) | (GPR[`rsrc1][15] & ~(IR[15] | GPR[`rsrc2][15]) & ~GPR[`rdst][15] );
+    else 
+        overflow = 1'b0;               
+ end   
+ //endtask
+ 
+ //------------- Reading Instruction memory and update program counter -------------------------------------
+ 
+ integer PC;
+ initial begin
+  $readmemb("instr2.mem",instr_mem);
+  
+ end
+ 
+ // --------------------------------------Control Logic FSM---------------------
+ parameter Idle =0,Fetch=1,Decode=2,UpdatePC = 3,SenseHalt=4;
+ reg [2:0] cs,ns;
+ 
+ always@(posedge clk)
+    if(reset) cs <=Idle;
+    else cs<=ns;
+    
+ always@(*)
+ begin
+    case(cs)
+        Idle: begin
+            IR = 0;
+            PC=0;
+            ns = Fetch;
+            decode_x =0;
+        end
+        Fetch: begin
+            IR = instr_mem[PC];
+            ns = Decode;
+        end
+        Decode:begin
+              decode_x =1;
+              ns = UpdatePC; 
+        end
+        
+        UpdatePC: begin
+            decode_x=0;
+            if(jump_flag ==1)
+                PC = `isrc;
+            else 
+                PC =PC +1;
+            ns = SenseHalt;     
+        end
+        SenseHalt:
+            if(stop_flag ==1)
+                ns = SenseHalt;
+            else
+                ns = Fetch;
+        default : begin
+            IR = 0;
+            PC=0;
+            ns = ns;
+        end            
+    endcase
+ end   
+
+ 
+endmodule
