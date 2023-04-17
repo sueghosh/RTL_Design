@@ -1,0 +1,42 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date: 03/07/2023 11:42:35 AM
+// Design Name: 
+// Module Name: tb
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
+
+
+module tb(
+
+    );
+    
+reg clk=0,reset=0;
+reg [15:0] din;
+wire [15:0] dout;    
+cpu dut(clk, reset, din, dout);
+
+always #5 clk =~clk;
+
+initial begin
+reset = 1;
+repeat (5)@(posedge clk);
+reset =0;
+din = 16'd23;
+#4000;
+$stop;
+end
+endmodule
