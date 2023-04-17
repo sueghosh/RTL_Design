@@ -1,5 +1,9 @@
 # VIVADO projects RTL_Design with Test Bench
+
 CPU design and Testbench and instruction to do the following multiplication operation :
+
+	cpu_16.v cpu_16_tb.v and instr2.mem
+
 0. MOV R0, #5;
 1. MOV R1, #6;
 2. MOV R2, #0;
@@ -9,6 +13,11 @@ CPU design and Testbench and instruction to do the following multiplication oper
 6. JNZ @4;
 7. MOV R5, r2;
 8. HALT
+
+
+UART Protocol: 
+uart.v
+
 
 # RTL_Design with Test Bench to test the code at EDA PLAYground
 
