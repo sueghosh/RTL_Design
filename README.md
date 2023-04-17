@@ -16,7 +16,14 @@ CPU design and Testbench and instruction to do the following multiplication oper
 
 
 UART Protocol: 
-uart.v
+
+uart.v and uart_tb.v
+
+PWM updown : 
+signal to increase the the brightness of the LED linearly reaching maximum brightness and then start decreasing the brightness of the LED till it reaches minimum level
+
+pwm_updpwn.v
+
 
 
 # RTL_Design with Test Bench to test the code at EDA PLAYground
