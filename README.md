@@ -2,7 +2,7 @@
 # VIVADO projects RTL_Design with Test Bench
 
 i2c protocol: i2c master controller for eeprom: 
-	i2c_eeprom_controller.v
+	i2c_eeprom_master.v
 
 CPU design and Testbench and instruction to do the following multiplication operation :
 
