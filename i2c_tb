@@ -1,0 +1,70 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date: 04/17/2023 07:09:51 PM
+// Design Name: 
+// Module Name: i2c_tb
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
+
+
+module i2c_tb(
+
+    );
+reg clk=0,rst=0,newd=0,rw=0;
+wire scl;
+wire sda;
+wire sda_rcv ;
+reg sda_drive=1'bz;
+reg [7:0] wdata;
+reg [6:0] addr;
+wire [7:0] rdata;
+wire done;
+eeprom_top dut( clk,rst,newd,rw,scl,sda,wdata,addr, rdata,done);
+assign sda = sda_drive;
+assign sda_rcv = sda;
+always #5 clk = ~clk;
+initial begin
+repeat(10) @(posedge clk);
+ rst =1;
+ //write
+ repeat(10) @(posedge clk);
+ rst =0; addr= 7'd11; wdata = 8'hca;newd =1;
+ repeat(100) @(posedge clk);
+ @(posedge scl) newd =0;
+ @(posedge(dut.state == 4)) sda_drive = 0;
+ @(posedge scl) sda_drive =1'bz;
+ @(posedge(dut.state == 6)) sda_drive = 0;
+ @(posedge scl) sda_drive =1'bz;
+ @(posedge done)repeat(10) @(posedge clk);
+ // Read 
+ addr= 7'h14; rw=1;newd =1;
+ repeat(100) @(posedge clk);
+ @(posedge scl) newd =0;
+ @(posedge(dut.state == 9)) sda_drive = 0;
+ //send data over sda pin serially 8'b01011100 =5C
+ @(posedge(dut.state == 10)) sda_drive = 0;
+ @(posedge scl) sda_drive =0;
+ @(posedge scl) sda_drive =1;
+ @(posedge scl) sda_drive =1;
+ @(posedge scl) sda_drive =1;
+ @(posedge scl) sda_drive =0;
+ @(posedge scl) sda_drive =1;
+ @(posedge scl) sda_drive =0;
+ @(posedge(dut.state == 12)) sda_drive = 1'bz;
+ #8000 $finish;
+end
+
+endmodule
