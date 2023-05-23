@@ -29,8 +29,8 @@ module eeprom_top
  input rw,   
  output scl,
  inout sda,
- input [7:0] wdata,
- input [6:0] addr, /////8-bit  7-bit : addr 1-bit : mode
+ input [7:0] wdata, // 8 bit data
+ input [6:0] addr, //  7-bit : addr 
  output reg [7:0] rdata,
  output reg done
   );
