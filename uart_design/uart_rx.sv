@@ -72,8 +72,9 @@ else begin
         start:begin
             rx_done <=0;
             if (count == 7 && rx) begin
-                rx_err <= 1'b1;
+                rx_err <= 1'b1; //start bit should be low ,if not flag error
                 count <= count +1;
+                state <= idle;
                 end
             else if  (count == 15)begin
                 state <= rcv_data;
