@@ -87,6 +87,7 @@ parameter idle = 0, check_wr = 1, wstart = 2, wsend_addr = 3, waddr_ack = 4,
            sclt  <= 1'b0;
            sdat  <= 1'b0;
            donet <= 1'b0;
+           state <=idle;
          end
        else begin
          case(state)
